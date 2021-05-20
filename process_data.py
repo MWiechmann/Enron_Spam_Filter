@@ -4,17 +4,21 @@ import zipfile as zf
 import os
 import sys
 import psutil
+import requests
 
 # ALLOW USER TO LOWER PRIORITY #
 '''
-This process takes a while (at least with HDD) and takes up quite a bit of system ressources.
+This process takes a while (at least with HDD & 8GB DDR3 Ram) and takes up quite a bit of system ressources.
 Therefore, allow the user to lower process priority to keep the system (hopefully) responsive.
 
 '''
-print("This process will take up quite some time and system ressources.")
-print("You can lower the priority of this process to keep the system responsive (recommended - choose 'y') - this takes longer but you should still be able to work on your machine while the process runs.")
-print(" Choosing normal priority can lead to the system temporarily being unresponsive - only choose 'n' if you want to run this over night, etc.!")
+print("\nThis process will take up quite some time and system ressources.")
+print("\nYou can lower the priority of this process to keep the system responsive (recommended - choose 'y')")
+print("- this takes longer but you should still be able to work on your machine while the process runs.")
+print("\nChoosing normal priority can lead to the system temporarily being unresponsive.")
+print("Choosing 'n' is therefore only recommended if you want to run this over night, during a longer lunch break etc...\n")
 while True:
+
 
     try:
         user_input = input("Run process with low priority? (y/n): ")
@@ -46,16 +50,26 @@ if low_priority:
     else:
         p.nice(1)
 
+# DOWNLOAD ENRON SPAM DATA FROM REPO #
+# for info on repo see: https://github.com/MWiechmann/enron_spam_data
+print("\nDownloading Enron Spam Data File from Repo (https://github.com/MWiechmann/enron_spam_data)...", end="")
+r = requests.get("https://github.com/MWiechmann/enron_spam_data/raw/master/enron_spam_data.zip")
+if not os.path.exists("data"):
+    os.mkdir("data")
+
+with open("data/enron_spam_data.zip", 'wb') as f:
+    f.write(r.content)
+print('Done!')
 
 # READ IN DATA #
 
-print("\nReading in data...")
+print("\nReading in data...", end = "")
 
-mails = pd.read_csv("enron_spam_data.zip",
+mails = pd.read_csv("data/enron_spam_data.zip",
                     compression="zip", index_col="Message ID")
 
-print("...Done!")
-print("Email data read in:")
+print("Done!")
+print("\nEmail data read in:")
 print("\nTotal:\t" + str(mails.shape[0]))
 print(mails["Spam/Ham"].value_counts(dropna=False))
 
@@ -92,20 +106,20 @@ print("Proportion in %")
 print(round(test["Spam/Ham"].value_counts(normalize=True), 4)*100)
 
 ### SAVE TEST DATA AND DROP FROM MEMORY ###
-print("\n Saving test data set and dropping it from memory...", end="")
+print("\nSaving test data set and dropping it from memory...", end="")
 
-with zf.ZipFile('test_data.zip', 'w') as test_zip:
+with zf.ZipFile('data/test_data.zip', 'w') as test_zip:
     test_zip.writestr('test_data.csv', test.to_csv(
         index_label="Message ID"), compress_type=zf.ZIP_DEFLATED)
 
-print("DONE! Test dataframe saved to 'test_data.zip'.")
+print("DONE!\nTest dataframe saved to 'data/test_data.zip'.")
 
 del test_zip, test
 
 # PREPPING STRING DATA FOR PROCESSING #
 
 print("\nPreparing string data for processing...")
-print("...transforming strings to lowercase...")
+print("...transforming strings to lowercase...", end ="")
 
 # Prepping Subject Line Data #
 
@@ -125,7 +139,7 @@ train["Message"] = train["Message"].str.replace(
     "\s{2,}", " ", regex=True).str.strip()
 
 # Transform string data to list
-print("...Done. Transforming strings to lists...", end="")
+print("...Done.\nTransforming strings to lists...", end="")
 train["Subject"] = train["Subject"].str.split(" ")
 train["Message"] = train["Message"].str.split(" ")
 print("...Done!")
@@ -134,11 +148,11 @@ print("...Done!")
 # Saving Dataframes to file
 print("\nData Processed. Now saving dataframe to compressed file...", end="")
 
-with zf.ZipFile('train_data.zip', 'w') as train_zip:
+with zf.ZipFile('data/train_data.zip', 'w') as train_zip:
     train_zip.writestr('train_data.csv', train.to_csv(
         index_label="Message ID"), compress_type=zf.ZIP_DEFLATED)
 
-print("...DONE! Dataframes saved to 'train_data.zip'.")
+print("DONE!\nDataframes saved to 'data/train_data.zip'.")
 del train_zip
 
 # BUILDING THE VOCABULARY: SUBJECT LINE #
@@ -226,10 +240,10 @@ def save_dict_to_csv(dictionary, output_file_name, progress_step_size=5):
 
 
 print("...saving subject line vocabulary to csv-file...")
-save_dict_to_csv(word_counts_per_subject, 'subject_voc.csv')
+save_dict_to_csv(word_counts_per_subject, 'data/subject_voc.csv')
 print("Now compressing csv-file to zip-file...", end="")
-zf.ZipFile('subject_voc.zip', mode='w').write(
-    "subject_voc.csv", compress_type=zf.ZIP_DEFLATED)
+zf.ZipFile('data/subject_voc.zip', mode='w').write(
+    "data/subject_voc.csv", compress_type=zf.ZIP_DEFLATED)
 print("Done!")
 
 del subject_voc, word_counts_per_subject
@@ -257,7 +271,7 @@ print("Done!")
 print("\nUnique words in message bodies of training data set:")
 print(len(message_voc))
 
-print("\n...create dictonary with message bodies vocabulary and word count per message...")
+print("\n...create dictonary with message body vocabulary and word count per message...")
 print("...(This will take a while!)...")
 # Create a dictionary with all unique words as keys and a list as entry
 # the list contains one count for each email message (row) - will be filled in the next step
@@ -289,11 +303,11 @@ print("...Done!               ")
 
 print("...saving message body vocabulary to csv-file (takes a while!)...")
 save_dict_to_csv(word_counts_per_message,
-                 'message_voc.csv', progress_step_size=2)
+                 'data/message_voc.csv', progress_step_size=2)
 print("Now compressing csv-file to zip-file (takes a while!)...", end="")
-zf.ZipFile('message_voc.zip', mode='w').write(
-    "message_voc.csv", compress_type=zf.ZIP_DEFLATED, compresslevel=9)
-print("...Done!")
+zf.ZipFile('data/message_voc.zip', mode='w').write(
+    "data/message_voc.csv", compress_type=zf.ZIP_DEFLATED, compresslevel=9)
+print("...Done!\n")
 
 del train, message_voc, word_counts_per_message
 
@@ -302,8 +316,8 @@ while True:
         user_input = input(
             "Delete uncompressed dictionary files and only keep compressed files? (y/n): ")
         if user_input.lower() == "y" or user_input.lower() == "yes":
-            os.remove("subject_voc.csv")
-            os.remove("message_voc.csv")
+            os.remove("data/subject_voc.csv")
+            os.remove("data/message_voc.csv")
             print(
                 "Okay - uncompressed csv file deleted. All files processed and results saved to file!")
             break
