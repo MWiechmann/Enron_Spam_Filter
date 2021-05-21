@@ -92,6 +92,9 @@ cutoff_index = int(round(mails.shape[0] * 0.8, 0))
 train = mails.iloc[:cutoff_index].copy(deep=True)
 test = mails.iloc[cutoff_index:].copy(deep=True)
 
+# mails is no longer needed - drop from memory
+del mails
+
 train.reset_index(drop=True, inplace=True)
 test.reset_index(drop=True, inplace=True)
 
