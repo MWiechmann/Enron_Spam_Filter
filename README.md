@@ -6,7 +6,7 @@ Contents of this repo
 File|Details
 -|-
 /data|data files see below for details
-Building a Spam Filter with Naive Bayes.ipynb|Jupyter Notebook with the python code to build the Spam Filter. Open the [Notebook here](https://github.com/MWiechmann/enron_spam_filter/blob/main/Building%20a%20Spam%20Filter%20with%20Naive%20Bayes.ipynb) to see the analysis.
+Building a Spam Filter with Naive Bayes.ipynb|Jupyter Notebook with the python code to build the Spam Filter. Open the [Notebook here](https://nbviewer.jupyter.org/github/MWiechmann/enron_spam_filter/blob/main/Building%20a%20Spam%20Filter%20with%20Naive%20Bayes.ipynb) to see the analysis.
 process_data.py|Python script to fetch data from repo and pre-process it (as seperate script so it can run in the background with low priorities if needed)
 
 ## Contents of /data
